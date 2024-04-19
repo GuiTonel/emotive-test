@@ -42,7 +42,6 @@ coverage.*
 htmlcov/*
 bin/
 .envrc
-.env*
 lib/
 .direnv/
 pyvenv.cfg
