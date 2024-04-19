@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:12-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=emotive
+      - POSTGRES_USER=emotive
+      - POSTGRES_PASSWORD=emotive
+    expose:
+      - "5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  app:
+    depends_on:
+      - db
+      - redis
+    build:
+      context: .
+      dockerfile: dockerfile
+    env_file: 
+      - ./app/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - media_volume:/app/media
+    entrypoint: /entrypoint/entrypoint.sh
+    command: runserver
+
+  redis:
+    restart: unless-stopped
+    image: redis:7.2.4-alpine 
+    expose:
+        - 6379
+    command: redis-server --save "" --appendonly no
+
+  celery:
+    build: .
+    working_dir: /app
+    command: celery -A take_home worker -l INFO
+    volumes:
+      - media_volume:/app/media
+    env_file: 
+      - ./app/.env
+    depends_on:
+        - app
+        - redis
+
+volumes:
+  db_data:
+    driver: local
+  media_volume:
+    driver: local
